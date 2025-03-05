@@ -91,15 +91,18 @@ public class UserQueueService {
         }
     }
 
-    @Scheduled(fixedDelay = 3000, initialDelay = 10000)
+    @Scheduled(fixedDelay = 5000, initialDelay = 10000)
     public void scheduleAllowUser() {
         if(!scheduling) {
             log.info("passed scheduling...");
             return;
         }
         log.info("called scheduling...");
-        var maxAllowUserCount = 3L;
-        reactiveRedisTemplate.scan(ScanOptions.scanOptions().match(USER_QUEUE_WAIT_KEY_FOR_SCAN).count(100).build())
+        var maxAllowUserCount = 100L;
+        reactiveRedisTemplate.scan(ScanOptions.scanOptions()
+                        .match(USER_QUEUE_WAIT_KEY_FOR_SCAN)
+                        .count(100)
+                        .build())
                 .map(key -> key.split(":")[2])
                 .flatMap(queue -> allowUser(queue, maxAllowUserCount).map(allowed -> Tuples.of(queue, allowed)))
                 .doOnNext(tuple -> log.info("Tried %d and allowed %d members of %s queues".formatted(maxAllowUserCount, tuple.getT2(), tuple.getT1())))
