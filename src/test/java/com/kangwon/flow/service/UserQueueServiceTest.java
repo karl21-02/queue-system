@@ -11,6 +11,8 @@ import org.springframework.data.redis.connection.ReactiveRedisConnection;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import reactor.test.StepVerifier;
 
+import java.security.NoSuchAlgorithmException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -60,7 +62,7 @@ class UserQueueServiceTest {
                                 .then(userQueueService.registerWaitQueue("default", 101L))
                                 .then(userQueueService.registerWaitQueue("default", 102L))
                                 .then(userQueueService.allowUser("default", 2L)))
-                .expectNext(3L)
+                .expectNext(4L)
                 .verifyComplete();
     }
 
@@ -69,6 +71,37 @@ class UserQueueServiceTest {
         StepVerifier.create(
                         userQueueService.isAllowed("default", 100L))
                 .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    void getRank() {
+        StepVerifier.create(
+                userQueueService.registerWaitQueue("default", 100L)
+                        .then(userQueueService.getRank("default", 100L)))
+                .expectNext(1L)
+                .verifyComplete();
+    }
+
+    @Test
+    void emptyRank() {
+        StepVerifier.create(
+                        userQueueService.registerWaitQueue("default", 100L))
+                .expectNext(1L)
+                .verifyComplete();
+    }
+
+    @Test
+    void isAllowedByToken() throws NoSuchAlgorithmException {
+        StepVerifier.create(userQueueService.isAllowedByToken("default", 100L, ""))
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
+    void generateToken() throws NoSuchAlgorithmException {
+        StepVerifier.create(userQueueService.generateToken("default", 100L))
+                .expectNext("d333a5d4eb24f3f5cdd767d79b8c01aad3cd73d3537c70dec430455d37afe4b8")
                 .verifyComplete();
     }
 }
